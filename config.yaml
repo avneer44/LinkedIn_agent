@@ -1,0 +1,33 @@
+search:
+  keywords:
+    - "Data Scientist"
+    - "Junior Developer"
+    - "Software Engineer"
+    - "0+ Years Experience"
+    - "Backend"
+    - "Full Stack"
+    - "elbit"
+    - "rafael"
+    - "intel"
+    - "nvidia"
+
+  location: "Israel"
+  # LinkedIn experience level codes: 1=Internship, 2=Entry, 3=Associate, 4=Mid-Senior, 5=Director, 6=Executive
+  experience_levels:
+    - "0"
+    - "1"
+    - "2"
+    - "3"
+    - "4"
+
+  max_jobs_per_run: 30
+  schedule_hours: 10
+
+filter:
+  min_relevance_score: 70
+  cv_path: "cv.txt"
+
+notifications:
+  email_to: "avner.shimon2@gmail.com"
+  email_from: "avneer44@gmail.com"
+  send_if_empty: false

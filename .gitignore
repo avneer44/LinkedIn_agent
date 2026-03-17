@@ -1,0 +1,28 @@
+# Credentials & secrets
+.env
+
+# Runtime data
+data/session.json
+data/jobs.db
+
+# Logs
+logs/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Playwright
+.playwright/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# CV (personal document - exclude from public repos)
+cv.txt
+
+# OS files
+.DS_Store
+Thumbs.db

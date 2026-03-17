@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LinkedIn Job Scout – ספר הוראות</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --blue: #0077b5;
+  --blue-dark: #005f91;
+  --blue-light: #e8f4fb;
+  --navy: #0a1628;
+  --green: #2ecc71;
+  --orange: #f39c12;
+  --red: #e74c3c;
+  --bg: #f4f6f9;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --text: #1a202c;
+  --code-bg: #1e1e2e;
+  --code-text: #cdd6f4;
+}
+
+html, body {
+  width: 100%; height: 100%; overflow: hidden;
+  font-family: 'Segoe UI', 'Arial', sans-serif;
+  background: #000;
+}
+
+/* ── Slides ── */
+.slide {
+  position: absolute; inset: 0;
+  display: none; flex-direction: column;
+  justify-content: center; align-items: center;
+  padding: 40px 80px;
+  opacity: 0; transition: opacity .35s ease;
+  overflow: hidden;
+}
+.slide.active { display: flex; opacity: 1; }
+.slide.bg-navy { background: var(--navy); color: #fff; }
+.slide.bg-white { background: var(--card); color: var(--text); }
+.slide.bg-light { background: var(--bg); color: var(--text); }
+
+/* ── Navigation ── */
+.nav-btn {
+  position: fixed; top: 50%; transform: translateY(-50%);
+  width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(255,255,255,.15); border: 2px solid rgba(255,255,255,.25);
+  color: #fff; font-size: 1.4rem; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .2s; z-index: 100; user-select: none;
+  backdrop-filter: blur(4px);
+}
+.nav-btn:hover { background: rgba(255,255,255,.3); }
+.nav-prev { left: 16px; }
+.nav-next { right: 16px; }
+.nav-btn.dark { background: rgba(0,0,0,.08); border-color: rgba(0,0,0,.15); color: #333; }
+.nav-btn.dark:hover { background: rgba(0,0,0,.15); }
+
+/* ── Progress ── */
+#progress {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 8px; z-index: 100;
+}
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: rgba(255,255,255,.35); transition: background .2s, transform .2s;
+  cursor: pointer;
+}
+.dot.active { background: #fff; transform: scale(1.4); }
+.dot.dark { background: rgba(0,0,0,.2); }
+.dot.dark.active { background: var(--blue); }
+
+#counter {
+  position: fixed; top: 18px; left: 20px;
+  font-size: .78rem; color: rgba(255,255,255,.5);
+  z-index: 100; letter-spacing: .04em;
+}
+#counter.dark { color: var(--muted); }
+
+/* ── Typography ── */
+.slide-tag {
+  font-size: .7rem; text-transform: uppercase; letter-spacing: .12em;
+  font-weight: 700; margin-bottom: 10px;
+  color: var(--blue); background: var(--blue-light);
+  padding: 3px 12px; border-radius: 20px; align-self: flex-start;
+}
+.slide-tag.light { color: rgba(255,255,255,.6); background: rgba(255,255,255,.1); }
+
+h1.big { font-size: clamp(2rem, 5vw, 3.6rem); font-weight: 800; line-height: 1.15; }
+h2.title { font-size: clamp(1.5rem, 3.5vw, 2.4rem); font-weight: 700; margin-bottom: 24px; }
+p.sub { font-size: clamp(.9rem, 2vw, 1.15rem); line-height: 1.7; color: var(--muted); max-width: 720px; }
+p.sub.light { color: rgba(255,255,255,.65); }
+
+/* ── Cards / grids ── */
+.grid { display: grid; gap: 16px; width: 100%; max-width: 960px; }
+.g2 { grid-template-columns: 1fr 1fr; }
+.g3 { grid-template-columns: 1fr 1fr 1fr; }
+.g4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+@media (max-width: 700px) { .g2,.g3,.g4 { grid-template-columns: 1fr; } }
+
+.card {
+  background: var(--card); border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 12px rgba(0,0,0,.07);
+  padding: 20px 22px;
+}
+.card.blue-border { border-top: 4px solid var(--blue); }
+.card.green-border { border-top: 4px solid var(--green); }
+.card.orange-border { border-top: 4px solid var(--orange); }
+.card.red-border { border-top: 4px solid var(--red); }
+
+.icon { font-size: 2rem; margin-bottom: 10px; display: block; }
+.card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; color: var(--text); }
+.card p { font-size: .85rem; color: var(--muted); line-height: 1.6; }
+
+/* ── Pipeline diagram ── */
+.pipeline {
+  display: flex; align-items: center; gap: 0;
+  flex-wrap: wrap; justify-content: center;
+  width: 100%; max-width: 960px;
+}
+.pipe-step {
+  display: flex; flex-direction: column; align-items: center;
+  background: var(--card); border-radius: 14px;
+  border: 2px solid #e2e8f0; padding: 20px 18px;
+  min-width: 150px; text-align: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,.06);
+  flex: 1;
+}
+.pipe-step .step-icon { font-size: 2.2rem; margin-bottom: 8px; }
+.pipe-step h4 { font-size: .9rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.pipe-step p { font-size: .75rem; color: var(--muted); line-height: 1.5; }
+.pipe-arrow {
+  font-size: 1.8rem; color: var(--blue); margin: 0 6px;
+  flex-shrink: 0;
+}
+
+/* ── Code blocks ── */
+pre {
+  background: var(--code-bg); color: var(--code-text);
+  border-radius: 10px; padding: 14px 18px;
+  font-family: 'Consolas', 'Courier New', monospace;
+  font-size: .82rem; line-height: 1.6; overflow-x: auto;
+  text-align: left; direction: ltr;
+}
+code { font-family: 'Consolas', 'Courier New', monospace; }
+.inline-code {
+  background: #f0f4f8; color: var(--blue-dark);
+  padding: 1px 7px; border-radius: 5px;
+  font-family: 'Consolas', monospace; font-size: .85em;
+}
+
+/* ── Score badges ── */
+.badge {
+  display: inline-block; padding: 3px 12px; border-radius: 20px;
+  font-size: .82rem; font-weight: 700; color: #fff;
+}
+.badge.green { background: var(--green); }
+.badge.orange { background: var(--orange); }
+.badge.red { background: var(--red); }
+
+/* ── Config table ── */
+.cfg-table { width: 100%; border-collapse: collapse; font-size: .88rem; }
+.cfg-table thead th {
+  text-align: right; padding: 10px 14px;
+  background: var(--bg); color: var(--muted);
+  font-size: .75rem; text-transform: uppercase; letter-spacing: .06em;
+}
+.cfg-table tbody td { padding: 10px 14px; border-bottom: 1px solid #e2e8f0; }
+.cfg-table tbody tr:hover { background: #f8fafc; }
+.cfg-table .key { direction: ltr; text-align: left; font-family: monospace; color: var(--blue-dark); font-size: .82rem; }
+
+/* ── Troubleshoot table ── */
+.trouble-table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+.trouble-table thead th {
+  text-align: right; padding: 9px 12px;
+  background: var(--navy); color: rgba(255,255,255,.7);
+  font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;
+}
+.trouble-table tbody td { padding: 9px 12px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+.trouble-table tbody tr:hover { background: var(--blue-light); }
+.trouble-table .prob { color: var(--red); font-weight: 600; }
+.trouble-table .fix { color: var(--green); }
+
+/* ── Step list ── */
+.steps { list-style: none; width: 100%; max-width: 820px; }
+.steps li {
+  display: flex; gap: 18px; align-items: flex-start;
+  padding: 14px 18px; margin-bottom: 10px;
+  background: var(--card); border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 6px rgba(0,0,0,.05);
+}
+.step-num {
+  min-width: 34px; height: 34px; border-radius: 50%;
+  background: var(--blue); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: .9rem; flex-shrink: 0;
+}
+.steps li .body h4 { font-size: .95rem; font-weight: 700; margin-bottom: 3px; }
+.steps li .body p { font-size: .82rem; color: var(--muted); line-height: 1.5; }
+
+/* ── Mode cards ── */
+.mode-card {
+  background: var(--card); border-radius: 14px;
+  border: 2px solid #e2e8f0; padding: 24px 20px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.mode-card .mode-icon { font-size: 2rem; }
+.mode-card h3 { font-size: 1.05rem; font-weight: 700; }
+.mode-card p { font-size: .83rem; color: var(--muted); line-height: 1.55; }
+.mode-card pre { font-size: .78rem; }
+
+/* ── Highlight box ── */
+.highlight {
+  background: var(--blue-light); border-right: 4px solid var(--blue);
+  border-radius: 8px; padding: 14px 18px;
+  font-size: .88rem; line-height: 1.7;
+  max-width: 820px; width: 100%;
+}
+.highlight.warn { background: #fff8e1; border-color: var(--orange); }
+.highlight.success { background: #eafaf1; border-color: var(--green); }
+
+/* ── DB visual ── */
+.db-row {
+  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  font-size: .75rem;
+}
+.db-col {
+  background: var(--code-bg); color: var(--code-text);
+  padding: 6px 14px; border-radius: 8px;
+  font-family: monospace;
+}
+.db-col.highlight-col { background: var(--blue); color: #fff; font-weight: 700; }
+
+/* ── Content width ── */
+.content { width: 100%; max-width: 960px; }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<button class="nav-btn nav-prev" id="prev" onclick="go(-1)">&#8250;</button>
+<button class="nav-btn nav-next" id="next" onclick="go(1)">&#8249;</button>
+<div id="counter">1 / 11</div>
+<div id="progress"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 1: Title -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<section class="slide bg-navy active" data-theme="dark">
+  <div style="text-align:center; max-width:700px;">
+    <div style="font-size:4rem; margin-bottom:16px;">🔍</div>
+    <h1 class="big" style="color:#fff; margin-bottom:16px;">LinkedIn Job Scout</h1>
+    <p style="font-size:1.25rem; color:rgba(255,255,255,.65); line-height:1.7; margin-bottom:36px;">
+      סוכן אוטומטי שמחפש משרות בלינקדאין, מדרג אותן בעזרת בינה מלאכותית,<br>
+      ושולח לך רק את הרלוונטיות ביותר — ישירות למייל.
+    </p>
+    <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <span style="background:rgba(255,255,255,.1); color:rgba(255,255,255,.8); padding:6px 16px; border-radius:20px; font-size:.85rem;">🤖 Claude AI</span>
+      <span style="background:rgba(255,255,255,.1); color:rgba(255,255,255,.8); padding:6px 16px; border-radius:20px; font-size:.85rem;">🌐 LinkedIn Scraper</span>
+      <span style="background:rgba(255,255,255,.1); color:rgba(255,255,255,.8); padding:6px 16px; border-radius:20px; font-size:.85rem;">📧 Gmail</span>
+      <span style="background:rgba(255,255,255,.1); color:rgba(255,255,255,.8); padding:6px 16px; border-radius:20px; font-size:.85rem;">🗄️ SQLite</span>
+    </div>
+    <p style="margin-top:48px; color:rgba(255,255,255,.3); font-size:.78rem;">
+      לחץ ← / → לניווט בין שקופיות
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 2: What does it do? -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<section class="slide bg-white" data-theme="light">
+  <span class="slide-tag">סקירה כללית</span>
+  <h2 class="title">מה המוצר עושה?</h2>
+  <div class="grid g4" style="max-width:960px; width:100%;">
+    <div class="card blue-border">
+      <span class="icon">🔐</span>
+      <h3>שלב 1 – כניסה ללינקדאין</h3>
+      <p>הסוכן נכנס לחשבון הלינקדאין שלך אוטומטית, ושומר את פרטי ה-Session כדי לא לצטרך להתחבר שוב בפעם הבאה.</p>
+    </div>
+    <div class="card blue-border">
+      <span class="icon">🔍</span>
+      <h3>שלב 2 – חיפוש משרות</h3>
+      <p>הדפדפן גולש בעצמו לעמודי חיפוש המשרות לפי מילות המפתח והמיקום שהגדרת, ושולף את הפרטים של כל משרה.</p>
+    </div>
+    <div class="card blue-border">
+      <span class="icon">🤖</span>
+      <h3>שלב 3 – ניתוח AI</h3>
+      <p>כל משרה נשלחת ל-Claude AI יחד עם הקורות חיים שלך. ה-AI מעניק ציון 0–100 ומסביר בעברית למה המשרה מתאימה (או לא).</p>
+    </div>
+    <div class="card blue-border">
+      <span class="icon">📧</span>
+      <h3>שלב 4 – מייל עם התוצאות</h3>
+      <p>רק המשרות שעברו את סף הציון נשלחות אליך במייל מסודר עם קישורים ישירים להגשת מועמדות. כל משרה נשלחת פעם אחת בלבד.</p>
+    </div>
+  </div>
+  <div class="highlight" style="margin-top:20px; max-width:960px;">
+    💡 <strong>הרעיון הבסיסי:</strong> הסוכן עושה בשבילך את כל עבודת הסריקה וסינון הרעש — אתה מקבל רק את המשרות שבאמת שוות את הזמן שלך.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 3: Full pipeline -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<section class="slide bg-light" data-theme="light">
+  <span class="slide-tag">ארכיטקטורה</span>
+  <h2 class="title">הצינור המלא – איך הכל מתחבר</h2>
+  <div class="pipeline" style="gap:0; margin-bottom:24px;">
+    <div class="pipe-step" style="border-top:4px solid #0077b5;">
+      <div class="step-icon">🔐</div>
+      <h4>auth.py</h4>
+      <p>כניסה ללינקדאין<br>שמירת session</p>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step" style="border-top:4px solid #2ecc71;">
+      <div class="step-icon">🔍</div>
+      <h4>searcher.py</h4>
+      <p>גרידת משרות<br>שליפת תיאורים</p>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step" style="border-top:4px solid #9b59b6;">
+      <div class="step-icon">🗄️</div>
+      <h4>tracker.py</h4>
+      <p>שמירה ב-DB<br>סינון כפילויות</p>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step" style="border-top:4px solid #e74c3c;">
+      <div class="step-icon">🤖</div>
+      <h4>filter.py</h4>
+      <p>ניתוח Claude AI<br>ציון + סיבה</p>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-step" style="border-top:4px solid #f39c12;">
+      <div class="step-icon">📧</div>
+      <h4>notifier.py</h4>
+      <p>שליחת מייל<br>HTML דיגסט</p>
+    </div>
+  </div>
+  <div class="grid g3" style="max-width:960px; width:100%;">
+    <div class="highlight success">
+      🌐 <strong>הדפדפן נסגר</strong> אחרי שלב 2.<br>
+      כל הניתוח ב-AI וה-AI קורים <em>אחרי</em> שהגרידה מסתיימת.
+    </div>
+    <div class="highlight">
+      📂 <strong>קבצים קבועים:</strong><br>
+      <code>data/jobs.db</code> — היסטוריה<br>
+      <code>data/session.json</code> — cookies<br>
+      <code>logs/agent.log</code> — לוג
+    </div>
+    <div class="highlight warn">
+      ⚠️ <strong>כל משרה מסומנת כ-"נראתה"</strong> לפני הניתוח, גם אם ציונה נמוך — כדי שלא תנותח שוב בפעם הבאה.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 4: How it accesses data (scraping) -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<section class="slide bg-white" data-theme="light">
+  <span class="slide-tag">גישה למידע</span>
+  <h2 class="title">איך הסוכן שולף מידע מלינקדאין?</h2>
+  <div class="grid g2" style="max-width:960px; width:100%;">
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div class="card">
+        <h3>🌐 Playwright – דפדפן אמיתי</h3>
+        <p>הסוכן מפעיל דפדפן <strong>Chrome אמיתי</strong> (לא בוט רגיל) שנפתח על המסך. לינקדאין רואה בדיוק אותה פעילות כמו גלישה רגילה של אדם.</p>
+      </div>
+      <div class="card">
+        <h3>⏱️ עיכובים אקראיים</h3>
+        <p>בין כל פעולה יש המתנה אקראית של <strong>1.5 עד 4 שניות</strong> — בדיוק כמו אדם שגולש לאט. זה מונע חסימה על ידי לינקדאין.</p>
+      </div>
+      <div class="card">
+        <h3>🍪 שמירת Session (Cookies)</h3>
+        <p>אחרי כניסה ראשונה, ה-cookies נשמרים ב-<code class="inline-code">data/session.json</code>. בריצות הבאות הדפדפן מתחבר <strong>מיד</strong> ללא הקלדת סיסמה.</p>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div class="card">
+        <h3>🔍 תהליך החיפוש</h3>
+        <p>הדפדפן עובר לעמוד חיפוש המשרות של לינקדאין עם הפרמטרים שלך (מילות מפתח, מיקום, רמות ניסיון), גולל למטה שלוש פעמים לטעינת תוצאות, ואז פותח כל משרה כדי לשלוף את התיאור המלא שלה.</p>
+      </div>
+      <div class="card">
+        <h3>🛡️ אמצעי הגנה מפני חסימה</h3>
+        <ul style="font-size:.83rem; color:var(--muted); line-height:2; padding-right:18px;">
+          <li>Chrome User-Agent אמיתי (גרסה 124)</li>
+          <li>הדפדפן <strong>גלוי</strong> על המסך (לא מוסתר)</li>
+          <li>דגל <code class="inline-code">AutomationControlled</code> מבוטל</li>
+          <li>תמיכה ב-2FA – עצירה של 60 שניות לאישור ידני</li>
+        </ul>
+      </div>
+      <div class="highlight warn">
+        ⚠️ <strong>אם לינקדאין מבקש 2FA:</strong> חלון יישאר פתוח 60 שניות לאישור ידני — פשוט אשר בדפדפן שנפתח.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 5: AI scoring -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<section class="slide bg-light" data-theme="light">
+  <span class="slide-tag">בינה מלאכותית</span>
+  <h2 class="title">איך ה-AI מחליט מה מתאים לך?</h2>
+  <div class="grid g2" style="max-width:960px; width:100%; align-items:start;">
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div class="card">
+        <h3>🧠 מה Claude AI מקבל?</h3>
+        <p>לכל משרה ה-AI מקבל שני קלטים:</p>
+        <ul style="font-size:.83rem; color:var(--muted); line-height:1.9; margin-top:8px; padding-right:18px;">
+          <li>📄 <strong>הקורות חיים שלך</strong> — מתוך הקובץ <code class="inline-code">cv.txt</code></li>
+          <li>💼 <strong>תיאור המשרה המלא</strong> — כפי שנשלף מלינקדאין</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>⚖️ שני קריטריוני ניקוד</h3>
+        <ul style="font-size:.83rem; color:var(--muted); line-height:1.9; margin-top:4px; padding-right:18px;">
+          <li>✅ <strong>התאמה לקורות חיים</strong> — כמה הכישורים שלך מתאימים לדרישות</li>
+          <li>🌐 <strong>רלוונטיות תחום</strong> — האם התפקיד שייך לאותו תחום מקצועי, גם אם הטכנולוגיה לא מוזכרת ב-CV</li>
+        </ul>
+        <div class="highlight success" style="margin-top:10px;">
+          לדוגמה: אם הרקע שלך בפיתוח Python — תפקיד "Machine Learning Engineer" ייצא עם ציון גבוה גם אם לא כתבת ML ב-CV.
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div class="card">
+        <h3>🎯 סקאלת הציונים</h3>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="badge green">90–100</span>
+            <span style="font-size:.85rem; color:var(--muted);">התאמה מצוינת — כמעט כל הדרישות מתאימות</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="badge orange">70–89</span>
+            <span style="font-size:.85rem; color:var(--muted);">התאמה טובה — רוב הדרישות מתאימות</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="badge" style="background:#e67e22;">50–69</span>
+            <span style="font-size:.85rem; color:var(--muted);">התאמה חלקית — תחום סמוך עם כישורים מועברים</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span class="badge red">0–49</span>
+            <span style="font-size:.85rem; color:var(--muted);">התאמה גרועה — לא ישלח למייל</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>📝 הסיבה תמיד בעברית</h3>
+        <p>ה-AI מחזיר <strong>משפט הסבר אחד בעברית</strong> לכל משרה — כך תדע בדיוק למה קיבלת את המייל הזה.</p>
+        <div style="background:#f8f9fa; border-radius:8px; padding:12px 14px; margin-top:10px; font-size:.82rem; color:#555; font-style:italic;">
+          לדוגמה: "תפקיד Backend עם Python ו-REST APIs תואם במדויק לניסיון הפיתוח ולרקע הטכני של המועמד."
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 6: No duplicate emails -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<section class="slide bg-white" data-theme="light">
+  <span class="slide-tag">ניהול כפילויות</span>
+  <h2 class="title">ערבות שליחה חד-פעמית</h2>
+  <div class="grid g2" style="max-width:960px; width:100%; align-items:start;">
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div class="card">
+        <h3>🗄️ מסד הנתונים (SQLite)</h3>
+        <p>כל משרה שנגרדת נשמרת במסד נתונים מקומי בקובץ <code class="inline-code">data/jobs.db</code>. הטבלה כוללת:</p>
+        <div class="db-row" style="margin-top:12px;">
+          <div class="db-col">job_id</div>
+          <div class="db-col">title</div>
+          <div class="db-col">company</div>
+          <div class="db-col">score</div>
+          <div class="db-col highlight-col">emailed ✓</div>
+          <div class="db-col">seen_at</div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>🚫 לא נגרד מחדש</h3>
+        <p>בתחילת כל ריצה, הסוכן טוען את <strong>כל ה-IDs של משרות שכבר נראו</strong> מה-DB. משרות שכבר נסרקו בעבר — הדפדפן פשוט מדלג עליהן.</p>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div class="card green-border">
+        <h3>✅ זרימת ה-One-Time Guarantee</h3>
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+          <div style="display:flex; gap:12px; align-items:flex-start; font-size:.85rem;">
+            <span style="background:var(--blue); color:#fff; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:.75rem; font-weight:700;">1</span>
+            <span>משרה חדשה נגרדת → נשמרת ב-DB כ-<code class="inline-code">emailed=0</code></span>
+          </div>
+          <div style="display:flex; gap:12px; align-items:flex-start; font-size:.85rem;">
+            <span style="background:var(--blue); color:#fff; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:.75rem; font-weight:700;">2</span>
+            <span>ה-AI מנתח → ציון מספיק → נכלל במייל</span>
+          </div>
+          <div style="display:flex; gap:12px; align-items:flex-start; font-size:.85rem;">
+            <span style="background:var(--blue); color:#fff; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:.75rem; font-weight:700;">3</span>
+            <span>אחרי שליחת המייל → <code class="inline-code">emailed=1</code> ב-DB</span>
+          </div>
+          <div style="display:flex; gap:12px; align-items:flex-start; font-size:.85rem;">
+            <span style="background:var(--green); color:#fff; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:.75rem; font-weight:700;">4</span>
+            <span>ריצה הבאה: <code class="inline-code">is_emailed()</code> → TRUE → <strong>לא ישלח שוב</strong></span>
+          </div>
+        </div>
+      </div>
+      <div class="highlight success">
+        ✅ <strong>אין כפילויות.</strong> גם אם אותה משרה תופיע שוב בחיפוש בלינקדאין — הסוכן יזהה שכבר שלחת אותה ויתעלם ממנה בשקט.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 7: Email -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<section class="slide bg-light" data-theme="light">
+  <span class="slide-tag">התראות</span>
+  <h2 class="title">המייל שאתה מקבל</h2>
+  <div class="grid g2" style="max-width:960px; width:100%; align-items:start;">
+    <div style="display:flex; flex-direction:column; gap:14px;">
+      <div class="card">
+        <h3>📧 מה כלול במייל?</h3>
+        <ul style="font-size:.85rem; color:var(--muted); line-height:1.9; padding-right:18px;">
+          <li>כותרת בעברית עם מספר המשרות שנמצאו</li>
+          <li>טבלה עם: שם משרה, חברה, מיקום, ציון, הסבר</li>
+          <li>ציונים צבעוניים: <span style="background:var(--green); color:#fff; padding:1px 8px; border-radius:10px; font-size:.78rem;">85+</span> <span style="background:var(--orange); color:#fff; padding:1px 8px; border-radius:10px; font-size:.78rem;">70–84</span></li>
+          <li>כפתור "הגש מועמדות" ישיר לעמוד המשרה</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>⚙️ איך נשלח?</h3>
+        <ul style="font-size:.85rem; color:var(--muted); line-height:1.9; padding-right:18px;">
+          <li>Gmail SMTP SSL (פורט 465)</li>
+          <li>נדרש <strong>App Password</strong> — לא הסיסמה הרגילה</li>
+          <li>נשלח HTML + Plain Text (גיבוי לכל לקוח מייל)</li>
+          <li>ניתן להגדיר לשלוח גם כשאין תוצאות (<code class="inline-code">send_if_empty: true</code>)</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <!-- Mock email preview -->
+      <div style="border:1px solid #e2e8f0; border-radius:12px; overflow:hidden; box-shadow:0 4px 20px rgba(0,0,0,.1);">
+        <div style="background:#0077b5; color:#fff; padding:14px 18px;">
+          <div style="font-weight:700; font-size:1rem;">🔍 LinkedIn Job Scout</div>
+          <div style="font-size:.78rem; opacity:.75; margin-top:3px;">11/03/2026 14:30 | 3 משרות רלוונטיות נמצאו</div>
+        </div>
+        <div style="padding:14px 18px; background:#fff;">
+          <table style="width:100%; border-collapse:collapse; font-size:.78rem;">
+            <thead>
+              <tr style="background:#f5f5f5; text-align:right;">
+                <th style="padding:7px 10px;">משרה</th>
+                <th style="padding:7px 10px; text-align:center;">ציון</th>
+                <th style="padding:7px 10px;">הסבר</th>
+                <th style="padding:7px 10px; text-align:center;">פעולה</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid #eee;">
+                <td style="padding:8px 10px;"><strong style="color:#0077b5;">Backend Developer</strong><br><span style="color:#888;">Google TLV</span></td>
+                <td style="padding:8px 10px; text-align:center;"><span style="background:#2ecc71; color:#fff; padding:2px 8px; border-radius:10px; font-weight:700;">92</span></td>
+                <td style="padding:8px 10px; color:#555; font-size:.75rem;">Python + REST APIs תואם בדיוק לניסיון</td>
+                <td style="padding:8px 10px; text-align:center;"><span style="background:#0077b5; color:#fff; padding:4px 10px; border-radius:4px; font-size:.72rem;">הגש</span></td>
+              </tr>
+              <tr style="border-bottom:1px solid #eee;">
+                <td style="padding:8px 10px;"><strong style="color:#0077b5;">Software Engineer</strong><br><span style="color:#888;">Wix</span></td>
+                <td style="padding:8px 10px; text-align:center;"><span style="background:#f39c12; color:#fff; padding:2px 8px; border-radius:10px; font-weight:700;">78</span></td>
+                <td style="padding:8px 10px; color:#555; font-size:.75rem;">רלוונטי לתחום, דורש Java</td>
+                <td style="padding:8px 10px; text-align:center;"><span style="background:#0077b5; color:#fff; padding:4px 10px; border-radius:4px; font-size:.72rem;">הגש</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 8: Setup -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<section class="slide bg-white" data-theme="light">
+  <span class="slide-tag">התקנה</span>
+  <h2 class="title">הגדרה ראשונית – צעד אחר צעד</h2>
+  <ul class="steps" style="max-width:900px;">
+    <li>
+      <div class="step-num">1</div>
+      <div class="body">
+        <h4>התקן את ה-dependencies</h4>
+        <pre>pip install -r requirements.txt
+python -m playwright install chromium</pre>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">2</div>
+      <div class="body">
+        <h4>צור קובץ .env עם הפרטים שלך</h4>
+        <pre>LINKEDIN_EMAIL=your@email.com
+LINKEDIN_PASSWORD=yourpassword
+ANTHROPIC_API_KEY=sk-ant-...
+GMAIL_SENDER=your@gmail.com
+GMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx</pre>
+        <p style="margin-top:6px;">⚠️ App Password ≠ סיסמת Gmail רגילה. צור אחד ב: Google Account → Security → App Passwords</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">3</div>
+      <div class="body">
+        <h4>שמור קורות חיים כטקסט רגיל</h4>
+        <p>צור קובץ <code class="inline-code">cv.txt</code> בתיקיית הפרויקט עם תוכן ה-CV שלך בטקסט פשוט (לא Word, לא PDF).</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">4</div>
+      <div class="body">
+        <h4>ערוך את config.yaml לפי הצרכים שלך</h4>
+        <p>שנה את מילות החיפוש, המיקום, רמות הניסיון, וסף הציון המינימלי.</p>
+      </div>
+    </li>
+  </ul>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 9: Run modes -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<section class="slide bg-light" data-theme="light">
+  <span class="slide-tag">הפעלה</span>
+  <h2 class="title">3 דרכים להפעיל את הסוכן</h2>
+  <div class="grid g3" style="max-width:960px; width:100%;">
+    <div class="mode-card" style="border-top:4px solid #9b59b6;">
+      <div class="mode-icon">🔍</div>
+      <h3>Dry Run — בדיקה</h3>
+      <p>מחפש ומדרג משרות, מדפיס את התוצאות ללוג, <strong>אבל לא שולח מייל</strong>. מושלם לבדיקה שהכל עובד לפני הפעלה ראשונה.</p>
+      <pre>python main.py --dry-run</pre>
+    </div>
+    <div class="mode-card" style="border-top:4px solid var(--blue);">
+      <div class="mode-icon">▶️</div>
+      <h3>Single Run — ריצה בודדת</h3>
+      <p>מריץ את הצינור המלא פעם אחת — חיפוש, ניתוח, <strong>שליחת מייל</strong> — ואז יוצא.</p>
+      <pre>python main.py --once</pre>
+    </div>
+    <div class="mode-card" style="border-top:4px solid var(--green);">
+      <div class="mode-icon">⏰</div>
+      <h3>Scheduler — אוטומטי</h3>
+      <p>מריץ מיד ואז חוזר אוטומטית כל N שעות (לפי <code class="inline-code">schedule_hours</code> ב-config). הטרמינל נשאר פעיל. לחץ Ctrl+C לעצירה.</p>
+      <pre>python main.py</pre>
+    </div>
+  </div>
+  <div class="highlight" style="margin-top:20px; max-width:960px;">
+    🖥️ <strong>ממשק ניהול (Web UI):</strong> הרץ <code class="inline-code" style="font-size:.9em;">python app.py</code> ופתח <strong>http://localhost:5000</strong> לממשק גרפי שממנו ניתן לשלוט בכל האפשרויות, לראות לוגים בזמן אמת ולשנות הגדרות — ללא עריכת קבצים.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 10: Config -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<section class="slide bg-white" data-theme="light">
+  <span class="slide-tag">הגדרות</span>
+  <h2 class="title">config.yaml — כל מה שאפשר לשנות</h2>
+  <div style="max-width:960px; width:100%; overflow-x:auto;">
+    <table class="cfg-table">
+      <thead>
+        <tr>
+          <th>מפתח</th>
+          <th>ברירת מחדל</th>
+          <th>מה זה עושה?</th>
+          <th>טיפ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="key">search.keywords</td>
+          <td><code class="inline-code">["Software Engineer"]</code></td>
+          <td>מילות חיפוש בלינקדאין — רשימה</td>
+          <td>הוסף תפקידים נוספים להרחבת החיפוש</td>
+        </tr>
+        <tr>
+          <td class="key">search.location</td>
+          <td><code class="inline-code">"Israel"</code></td>
+          <td>מיקום גיאוגרפי לחיפוש</td>
+          <td>ניסה "Tel Aviv" לתוצאות ממוקדות יותר</td>
+        </tr>
+        <tr>
+          <td class="key">search.experience_levels</td>
+          <td><code class="inline-code">["2","3","4"]</code></td>
+          <td>רמות ניסיון: 1=סטאג', 2=Entry, 3=Associate, 4=Mid-Senior</td>
+          <td>הסר רמות שלא רלוונטיות אליך</td>
+        </tr>
+        <tr>
+          <td class="key">search.max_jobs_per_run</td>
+          <td><code class="inline-code">30</code></td>
+          <td>מקסימום משרות לגרוד בריצה אחת</td>
+          <td>הגדל ל-50 לכיסוי רחב יותר</td>
+        </tr>
+        <tr>
+          <td class="key">search.schedule_hours</td>
+          <td><code class="inline-code">1</code></td>
+          <td>כמה שעות בין ריצות בmodus scheduler</td>
+          <td><code class="inline-code">0.5</code> = כל 30 דק', <code class="inline-code">24</code> = יומי</td>
+        </tr>
+        <tr>
+          <td class="key">filter.min_relevance_score</td>
+          <td><code class="inline-code">70</code></td>
+          <td>ציון מינימלי לשליחת משרה במייל</td>
+          <td>80+ לסינון קפדני, 60+ לכיסוי רחב</td>
+        </tr>
+        <tr>
+          <td class="key">filter.cv_path</td>
+          <td><code class="inline-code">"cv.txt"</code></td>
+          <td>מיקום קובץ ה-CV</td>
+          <td>שמור את הקובץ כטקסט רגיל בלבד</td>
+        </tr>
+        <tr>
+          <td class="key">notifications.send_if_empty</td>
+          <td><code class="inline-code">false</code></td>
+          <td>שלח מייל גם אם לא נמצאו משרות</td>
+          <td>שנה ל-<code class="inline-code">true</code> לאישור שהסוכן עובד</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<!-- SLIDE 11: Troubleshooting -->
+<!-- ══════════════════════════════════════════════════════════════════ -->
+<section class="slide bg-navy" data-theme="dark">
+  <span class="slide-tag light">עזרה ראשונה</span>
+  <h2 class="title" style="color:#fff;">טיפים ופתרון בעיות</h2>
+  <div style="max-width:960px; width:100%; overflow-x:auto;">
+    <table class="trouble-table" style="background:#fff; border-radius:12px; overflow:hidden;">
+      <thead>
+        <tr>
+          <th>הבעיה</th>
+          <th>סיבה אפשרית</th>
+          <th>פתרון</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="prob">כניסה ללינקדאין נכשלת</td>
+          <td>פרטים שגויים ב-.env</td>
+          <td class="fix">בדוק LINKEDIN_EMAIL ו-LINKEDIN_PASSWORD</td>
+        </tr>
+        <tr>
+          <td class="prob">הסוכן לא מוצא משרות</td>
+          <td>מילות חיפוש צרות מדי</td>
+          <td class="fix">הוסף מילות חיפוש נוספות ב-config.yaml</td>
+        </tr>
+        <tr>
+          <td class="prob">מייל לא נשלח</td>
+          <td>App Password שגוי</td>
+          <td class="fix">השתמש בסיסמת App של 16 תווים (לא סיסמה רגילה)</td>
+        </tr>
+        <tr>
+          <td class="prob">לינקדאין מבקש 2FA</td>
+          <td>הגנת חשבון</td>
+          <td class="fix">בצע אישור ידני בחלון שנפתח תוך 60 שניות</td>
+        </tr>
+        <tr>
+          <td class="prob">Chrome לא נפתח</td>
+          <td>Playwright לא הותקן</td>
+          <td class="fix"><code>python -m playwright install chromium</code></td>
+        </tr>
+        <tr>
+          <td class="prob">ריצות קצרות, אין תוצאות</td>
+          <td>כל המשרות כבר נראו</td>
+          <td class="fix">זה תקין! הוסף מילות חיפוש לגלות משרות חדשות</td>
+        </tr>
+        <tr>
+          <td class="prob">שגיאת API של Claude</td>
+          <td>מפתח שגוי או תקציב נגמר</td>
+          <td class="fix">בדוק ANTHROPIC_API_KEY ב-console.anthropic.com</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top:18px; display:flex; gap:14px; flex-wrap:wrap; justify-content:center;">
+    <div style="background:rgba(255,255,255,.08); border-radius:10px; padding:12px 18px; font-size:.83rem; color:rgba(255,255,255,.75);">
+      📁 <strong>לוגים:</strong> <code style="color:#8be9fd;">logs/agent.log</code>
+    </div>
+    <div style="background:rgba(255,255,255,.08); border-radius:10px; padding:12px 18px; font-size:.83rem; color:rgba(255,255,255,.75);">
+      🗄️ <strong>DB:</strong> <code style="color:#8be9fd;">data/jobs.db</code>
+    </div>
+    <div style="background:rgba(255,255,255,.08); border-radius:10px; padding:12px 18px; font-size:.83rem; color:rgba(255,255,255,.75);">
+      🌐 <strong>Web UI:</strong> <code style="color:#8be9fd;">python app.py</code> → localhost:5000
+    </div>
+    <div style="background:rgba(46,204,113,.15); border-radius:10px; padding:12px 18px; font-size:.83rem; color:rgba(255,255,255,.9);">
+      ✅ <strong>בדיקה ראשונה:</strong> תמיד התחל עם <code style="color:#8be9fd;">--dry-run</code>
+    </div>
+  </div>
+</section>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const dots = [];
+let current = 0;
+
+function buildProgress() {
+  const prog = document.getElementById('progress');
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    d.onclick = () => go(i - current);
+    prog.appendChild(d);
+    dots.push(d);
+  });
+}
+
+function updateTheme(idx) {
+  const theme = slides[idx].dataset.theme;
+  const isDark = theme === 'dark';
+  document.getElementById('counter').className = isDark ? '' : 'dark';
+  document.getElementById('prev').className = `nav-btn nav-prev${isDark ? '' : ' dark'}`;
+  document.getElementById('next').className = `nav-btn nav-next${isDark ? '' : ' dark'}`;
+  dots.forEach(d => {
+    d.className = 'dot' + (isDark ? '' : ' dark');
+  });
+  dots[idx].classList.add('active');
+}
+
+function go(delta) {
+  const next = Math.max(0, Math.min(slides.length - 1, current + delta));
+  if (next === current) return;
+  slides[current].classList.remove('active');
+  current = next;
+  slides[current].classList.add('active');
+  // Force reflow for transition
+  slides[current].offsetHeight;
+  document.getElementById('counter').textContent = `${current + 1} / ${slides.length}`;
+  dots.forEach(d => d.classList.remove('active'));
+  updateTheme(current);
+  dots[current].classList.add('active');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') go(1);
+  else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') go(-1);
+  else if (e.key === ' ') { e.preventDefault(); go(1); }
+});
+
+buildProgress();
+updateTheme(0);
+document.getElementById('counter').textContent = `1 / ${slides.length}`;
+</script>
+</body>
+</html>

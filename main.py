@@ -28,13 +28,18 @@ LOG_DIR = Path(__file__).parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[
         logging.StreamHandler(sys.stdout),
         logging.FileHandler(LOG_DIR / "agent.log", encoding="utf-8"),
     ],
 )
+# Keep noisy libraries at INFO to avoid log spam
+logging.getLogger("werkzeug").setLevel(logging.INFO)
+logging.getLogger("apscheduler").setLevel(logging.WARNING)
+logging.getLogger("urllib3").setLevel(logging.WARNING)
+logging.getLogger("asyncio").setLevel(logging.WARNING)
 logger = logging.getLogger("main")
 
 

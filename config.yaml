@@ -1,33 +1,52 @@
 search:
   keywords:
-    - "Data Scientist"
-    - "Junior Developer"
-    - "Software Engineer"
-    - "0+ Years Experience"
-    - "Backend"
-    - "Full Stack"
-    - "elbit"
-    - "rafael"
-    - "intel"
-    - "nvidia"
-
-  location: "Israel"
-  # LinkedIn experience level codes: 1=Internship, 2=Entry, 3=Associate, 4=Mid-Senior, 5=Director, 6=Executive
+  - Data Scientist
+  - Junior Developer
+  - Software Engineer
+  - 0+ Years Experience
+  - Backend
+  - Full Stack
+  - elbit
+  - rafael
+  - intel
+  - nvidia
+  - checkpoint
+  - wix
+  - monday
+  - amdocs
+  - nice
+  - cyberark
+  - varonis
+  - mobileye
+  - radware
+  - fiverr
+  - ironSource
+  - מפתח תוכנה
+  - מהנדס תוכנה
+  - פיתוח תוכנה
+  - סטודנט
+  - משרת סטודנט
+  - DevOps
+  - Network Engineer
+  - IT Engineer
+  - NOC
+  - entry level
+  - junior
+  - graduate
+  location: Israel
   experience_levels:
-    - "0"
-    - "1"
-    - "2"
-    - "3"
-    - "4"
-
+  - '0'
+  - '1'
+  - '2'
+  - '3'
+  - '4'
   max_jobs_per_run: 30
   schedule_hours: 10
-
+  max_age_hours: 20
 filter:
-  min_relevance_score: 70
-  cv_path: "cv.txt"
-
+  min_relevance_score: 30
+  cv_path: cv.txt
 notifications:
-  email_to: "avner.shimon2@gmail.com"
-  email_from: "avneer44@gmail.com"
+  email_to: avner.shimon2@gmail.com
+  email_from: avneer44@gmail.com
   send_if_empty: false

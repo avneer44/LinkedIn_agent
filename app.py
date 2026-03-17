@@ -16,7 +16,7 @@ from pathlib import Path
 
 import yaml
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template_string, request
+from flask import Flask, Response, jsonify, render_template_string, request
 
 load_dotenv()
 
@@ -65,6 +65,9 @@ def _get_state() -> dict:
 
 # ── Agent runner ──────────────────────────────────────────────────────────────
 def _run_agent_task(dry_run: bool = False) -> None:
+    from src.control import stop_event, clear_screenshot
+    stop_event.clear()
+    clear_screenshot()
     _set_state(status="running", error=None)
     try:
         config = load_config()
@@ -238,6 +241,41 @@ HTML = """<!DOCTYPE html>
   .dot.running { background: var(--orange); animation: pulse 1s infinite; }
   .dot.error   { background: var(--red); }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* ── Browser preview window ─────────────────────────────────────────── */
+  #browser-win {
+    position: fixed; bottom: 20px; left: 20px; z-index: 900;
+    width: 380px; border-radius: 10px; overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,.45);
+    background: #111; border: 2px solid #333;
+    display: none; flex-direction: column;
+  }
+  #browser-win.visible { display: flex; }
+  #browser-titlebar {
+    background: #222; color: #ccc; font-size: .72rem; font-weight: 600;
+    padding: 5px 10px; display: flex; align-items: center; gap: 8px;
+    cursor: move; user-select: none;
+  }
+  #browser-titlebar .live-dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #2ecc71;
+    animation: pulse 1s infinite; flex-shrink: 0;
+  }
+  #browser-titlebar .live-dot.offline { background: #555; animation: none; }
+  #browser-titlebar span { flex: 1; }
+  #browser-titlebar button {
+    background: none; border: none; color: #aaa; font-size: .85rem;
+    cursor: pointer; padding: 0 4px; line-height: 1;
+  }
+  #browser-preview {
+    width: 100%; display: block;
+    background: #111; min-height: 214px;
+    object-fit: contain;
+  }
+  #browser-offline {
+    width: 100%; min-height: 214px; display: flex;
+    align-items: center; justify-content: center;
+    color: #555; font-size: .85rem; font-family: monospace;
+  }
 </style>
 </head>
 <body>
@@ -283,6 +321,7 @@ HTML = """<!DOCTYPE html>
       <div class="controls" style="margin-bottom:20px;">
         <button class="btn-primary" id="btn-run" onclick="triggerRun(false)">▶ הרץ עכשיו</button>
         <button class="btn-outline" id="btn-dry" onclick="triggerRun(true)">🔍 Dry Run</button>
+        <button class="btn-danger"  id="btn-stop" onclick="stopAgent()" style="display:none;">⏹ עצור</button>
       </div>
       <hr style="border:none; border-top:1px solid var(--border); margin-bottom:16px;">
       <div class="controls">
@@ -323,6 +362,10 @@ HTML = """<!DOCTYPE html>
       <div class="form-group">
         <label>מקסימום משרות לריצה</label>
         <input type="number" id="cfg-maxjobs" min="1" max="200" value="{{ config.search.max_jobs_per_run }}">
+      </div>
+      <div class="form-group">
+        <label>גיל מקסימלי של משרה (שעות) – f_TPR</label>
+        <input type="number" id="cfg-age" min="1" max="720" value="{{ config.search.get('max_age_hours', 10) }}">
       </div>
       <button class="btn-primary" onclick="saveConfig()">💾 שמור הגדרות</button>
     </div>
@@ -390,6 +433,17 @@ HTML = """<!DOCTYPE html>
 
 </div>
 
+<!-- ── Floating browser preview ─────────────────────────────────────────── -->
+<div id="browser-win">
+  <div id="browser-titlebar" onmousedown="startDrag(event)">
+    <div class="live-dot offline" id="live-dot"></div>
+    <span id="browser-label">Browser – לא פעיל</span>
+    <button onclick="document.getElementById('browser-win').classList.remove('visible')" title="סגור">✕</button>
+  </div>
+  <img id="browser-preview" src="" alt="" style="display:none;">
+  <div id="browser-offline">אין פעילות</div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -404,7 +458,14 @@ HTML = """<!DOCTYPE html>
     document.getElementById(id).disabled = true;
     toast(dry ? '🔍 Dry run מתחיל...' : '▶ הרצה מתחילה...');
     await fetch('/api/run', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({dry_run: dry}) });
+    startBrowserStream();
     pollState();
+  }
+
+  async function stopAgent() {
+    await fetch('/api/stop', { method:'POST' });
+    toast('⏹ בקשת עצירה נשלחה – הסוכן יסיים את הפעולה הנוכחית');
+    document.getElementById('btn-stop').disabled = true;
   }
 
   async function schedulerAction(action) {
@@ -421,10 +482,10 @@ HTML = """<!DOCTYPE html>
       min_relevance_score: parseInt(document.getElementById('cfg-score').value),
       schedule_hours: parseInt(document.getElementById('cfg-hours').value),
       max_jobs_per_run: parseInt(document.getElementById('cfg-maxjobs').value),
+      max_age_hours: parseInt(document.getElementById('cfg-age').value),
     };
     const r = await fetch('/api/config', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
-    const d = await r.json();
-    toast(d.saved ? '✅ הגדרות נשמרו' : '❌ שגיאה בשמירה');
+    toast(r.ok ? '✅ הגדרות נשמרו' : '❌ שגיאה בשמירה');
   }
 
   async function refreshLog() {
@@ -458,6 +519,12 @@ HTML = """<!DOCTYPE html>
         document.getElementById('btn-dry').disabled = running;
         document.getElementById('btn-sched-start').disabled = s.scheduler_running;
         document.getElementById('btn-sched-stop').disabled = !s.scheduler_running;
+        const stopBtn = document.getElementById('btn-stop');
+        stopBtn.style.display = running ? 'inline-block' : 'none';
+        stopBtn.disabled = false;
+
+        // Browser preview window
+        setBrowserActive(running);
 
         if (running) {
           setTimeout(tick, 3000);
@@ -473,14 +540,79 @@ HTML = """<!DOCTYPE html>
     tick();
   }
 
-  // Scroll log to bottom on load
+  // ── Browser live preview ─────────────────────────────────────────────────
+  let _evtSource = null;
+
+  function startBrowserStream() {
+    if (_evtSource) return;  // already open
+    _evtSource = new EventSource('/api/browser-stream');
+    _evtSource.onmessage = (e) => {
+      if (e.data === 'ping') return;
+      const img = document.getElementById('browser-preview');
+      const off = document.getElementById('browser-offline');
+      img.src = 'data:image/jpeg;base64,' + e.data;
+      img.style.display = 'block';
+      off.style.display = 'none';
+    };
+    _evtSource.onerror = () => {
+      _evtSource.close(); _evtSource = null;
+    };
+  }
+
+  function stopBrowserStream() {
+    if (_evtSource) { _evtSource.close(); _evtSource = null; }
+    const img = document.getElementById('browser-preview');
+    const off = document.getElementById('browser-offline');
+    img.style.display = 'none';
+    off.style.display = 'flex';
+    off.textContent = 'הסוכן לא פעיל';
+  }
+
+  function setBrowserActive(active) {
+    const win = document.getElementById('browser-win');
+    const dot = document.getElementById('live-dot');
+    const lbl = document.getElementById('browser-label');
+    win.classList.add('visible');
+    if (active) {
+      dot.classList.remove('offline');
+      lbl.textContent = 'Browser – מחפש...';
+      startBrowserStream();
+    } else {
+      dot.classList.add('offline');
+      lbl.textContent = 'Browser – לא פעיל';
+      stopBrowserStream();
+    }
+  }
+
+  // ── Draggable window ─────────────────────────────────────────────────────
+  let _drag = null;
+  function startDrag(e) {
+    const win = document.getElementById('browser-win');
+    const rect = win.getBoundingClientRect();
+    _drag = { dx: e.clientX - rect.left, dy: e.clientY - rect.top };
+    win.style.bottom = 'auto'; win.style.right = 'auto';
+    win.style.left = rect.left + 'px'; win.style.top = rect.top + 'px';
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', stopDrag);
+  }
+  function onDrag(e) {
+    if (!_drag) return;
+    const win = document.getElementById('browser-win');
+    win.style.left = (e.clientX - _drag.dx) + 'px';
+    win.style.top  = (e.clientY - _drag.dy) + 'px';
+  }
+  function stopDrag() { _drag = null; document.removeEventListener('mousemove', onDrag); document.removeEventListener('mouseup', stopDrag); }
+
+  // ── Init ─────────────────────────────────────────────────────────────────
   window.addEventListener('load', () => {
     const box = document.getElementById('log-box');
     box.scrollTop = box.scrollHeight;
-    // Disable buttons based on initial state
     const schedulerRunning = {{ 'true' if state.scheduler_running else 'false' }};
     document.getElementById('btn-sched-start').disabled = schedulerRunning;
     document.getElementById('btn-sched-stop').disabled = !schedulerRunning;
+    // Show browser window if agent was already running when page loaded
+    const agentRunning = {{ 'true' if state.status == 'running' else 'false' }};
+    if (agentRunning) { setBrowserActive(true); }
   });
 </script>
 </body>
@@ -539,6 +671,8 @@ def api_config_save():
         config["search"]["schedule_hours"] = int(data["schedule_hours"])
     if "max_jobs_per_run" in data:
         config["search"]["max_jobs_per_run"] = int(data["max_jobs_per_run"])
+    if "max_age_hours" in data:
+        config["search"]["max_age_hours"] = int(data["max_age_hours"])
     CONFIG_PATH.write_text(yaml.dump(config, allow_unicode=True, sort_keys=False), encoding="utf-8")
     return jsonify({"saved": True})
 
@@ -557,6 +691,33 @@ def api_logs():
 def api_stats():
     tracker.init_db()
     return jsonify(tracker.get_stats())
+
+
+@app.route("/api/stop", methods=["POST"])
+def api_stop():
+    from src.control import stop_event
+    stop_event.set()
+    return jsonify({"status": "stop_requested"})
+
+
+@app.route("/api/browser-stream")
+def api_browser_stream():
+    """SSE endpoint – streams live browser screenshots as base64 JPEG frames."""
+    from src.control import pop_screenshot
+
+    def generate():
+        while True:
+            frame = pop_screenshot(timeout=6.0)
+            if frame:
+                yield f"data: {frame}\n\n"
+            else:
+                yield "data: ping\n\n"
+
+    return Response(
+        generate(),
+        content_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

@@ -26,3 +26,7 @@ cv.txt
 # OS files
 .DS_Store
 Thumbs.db
+
+# Docs (kept locally, not tracked)
+docs/git-guide.pdf
+docs/git-guide.html
